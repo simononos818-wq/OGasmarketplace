@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { 
   Flame, Store, Package, Settings, LogOut, Plus, Edit 
 } from 'lucide-react';
-import { useToast } from '../components/ui/use-toast';
+import { useToast } from '../hooks/use-toast';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
