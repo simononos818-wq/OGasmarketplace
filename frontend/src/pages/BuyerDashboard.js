@@ -8,7 +8,7 @@ import {
   Flame, Search, MapPin, Star, ShoppingCart, 
   MessageCircle, LogOut, Package, User 
 } from 'lucide-react';
-import { useToast } from '../components/ui/use-toast';
+import { useToast } from '../hooks/use-toast';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
