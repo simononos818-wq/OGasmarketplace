@@ -108,10 +108,14 @@ class GasListing(BaseModel):
     seller_id: str
     prices: dict  # {"3kg": 2000, "6kg": 3500, "12.5kg": 6000, "25kg": 11000, "50kg": 20000}
     available_sizes: List[CylinderSize]
+    inventory: dict = {}  # {"3kg": {"available": 50, "reserved": 5, "sold_today": 3}, ...}
     is_available: bool = True
     delivery_available: bool = True
     pickup_available: bool = True
     delivery_fee: Optional[int] = 0
+    low_stock_alert: int = 10  # Alert when stock falls below this
+    auto_unavailable_at: int = 0  # Automatically mark unavailable at this stock level
+    last_restocked: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
