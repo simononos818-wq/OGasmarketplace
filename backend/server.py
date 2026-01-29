@@ -516,6 +516,224 @@ async def get_my_listing(request: Request):
         return None
     return listing
 
+# ============= INVENTORY MANAGEMENT ROUTES =============
+
+@api_router.patch("/sellers/inventory/update")
+async def update_inventory(request: Request, inventory_update: dict):
+    """Update inventory levels for specific sizes"""
+    user = await require_seller(request)
+    seller = await db.sellers.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller profile not found")
+    
+    listing = await db.gas_listings.find_one({"seller_id": seller["seller_id"]}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Create a listing first")
+    
+    # Update inventory
+    current_inventory = listing.get("inventory", {})
+    
+    for size, quantity in inventory_update.items():
+        if size not in current_inventory:
+            current_inventory[size] = {"available": 0, "reserved": 0, "sold_today": 0}
+        current_inventory[size]["available"] = quantity
+    
+    # Check if any size is below low stock alert
+    low_stock_alert = listing.get("low_stock_alert", 10)
+    low_stock_sizes = []
+    for size, inv in current_inventory.items():
+        if inv["available"] <= low_stock_alert:
+            low_stock_sizes.append(size)
+    
+    # Auto-disable listing if all sizes are out of stock
+    auto_unavailable_at = listing.get("auto_unavailable_at", 0)
+    all_out_of_stock = all(inv["available"] <= auto_unavailable_at for inv in current_inventory.values())
+    
+    update_data = {
+        "inventory": current_inventory,
+        "updated_at": datetime.now(timezone.utc),
+        "last_restocked": datetime.now(timezone.utc)
+    }
+    
+    if all_out_of_stock:
+        update_data["is_available"] = False
+    
+    await db.gas_listings.update_one(
+        {"seller_id": seller["seller_id"]},
+        {"$set": update_data}
+    )
+    
+    return {
+        "message": "Inventory updated",
+        "low_stock_sizes": low_stock_sizes,
+        "listing_disabled": all_out_of_stock
+    }
+
+@api_router.post("/sellers/inventory/restock")
+async def restock_inventory(request: Request, restock_data: dict):
+    """Add stock to existing inventory"""
+    user = await require_seller(request)
+    seller = await db.sellers.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller profile not found")
+    
+    listing = await db.gas_listings.find_one({"seller_id": seller["seller_id"]}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Create a listing first")
+    
+    current_inventory = listing.get("inventory", {})
+    
+    for size, add_quantity in restock_data.items():
+        if size not in current_inventory:
+            current_inventory[size] = {"available": 0, "reserved": 0, "sold_today": 0}
+        current_inventory[size]["available"] += add_quantity
+    
+    # Re-enable listing if it was disabled
+    update_data = {
+        "inventory": current_inventory,
+        "is_available": True,
+        "updated_at": datetime.now(timezone.utc),
+        "last_restocked": datetime.now(timezone.utc)
+    }
+    
+    await db.gas_listings.update_one(
+        {"seller_id": seller["seller_id"]},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Inventory restocked", "new_inventory": current_inventory}
+
+@api_router.get("/sellers/inventory/alerts")
+async def get_inventory_alerts(request: Request):
+    """Get low stock alerts"""
+    user = await require_seller(request)
+    seller = await db.sellers.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller profile not found")
+    
+    listing = await db.gas_listings.find_one({"seller_id": seller["seller_id"]}, {"_id": 0})
+    if not listing:
+        return {"alerts": []}
+    
+    inventory = listing.get("inventory", {})
+    low_stock_alert = listing.get("low_stock_alert", 10)
+    
+    alerts = []
+    for size, inv in inventory.items():
+        available = inv.get("available", 0)
+        if available <= low_stock_alert and available > 0:
+            alerts.append({
+                "size": size,
+                "current_stock": available,
+                "alert_level": low_stock_alert,
+                "severity": "critical" if available <= 5 else "warning"
+            })
+        elif available == 0:
+            alerts.append({
+                "size": size,
+                "current_stock": 0,
+                "alert_level": low_stock_alert,
+                "severity": "critical",
+                "message": "OUT OF STOCK"
+            })
+    
+    return {"alerts": alerts}
+
+@api_router.get("/sellers/inventory/stats")
+async def get_inventory_stats(request: Request):
+    """Get inventory statistics"""
+    user = await require_seller(request)
+    seller = await db.sellers.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller profile not found")
+    
+    listing = await db.gas_listings.find_one({"seller_id": seller["seller_id"]}, {"_id": 0})
+    if not listing:
+        return {"stats": {}}
+    
+    inventory = listing.get("inventory", {})
+    
+    total_available = sum(inv.get("available", 0) for inv in inventory.values())
+    total_reserved = sum(inv.get("reserved", 0) for inv in inventory.values())
+    total_sold_today = sum(inv.get("sold_today", 0) for inv in inventory.values())
+    
+    return {
+        "total_available": total_available,
+        "total_reserved": total_reserved,
+        "total_sold_today": total_sold_today,
+        "by_size": inventory,
+        "last_restocked": listing.get("last_restocked"),
+        "listing_status": "available" if listing.get("is_available") else "unavailable"
+    }
+
+# Update order creation to reserve inventory
+async def reserve_inventory(seller_id: str, cylinder_size: str, quantity: int):
+    """Reserve inventory when order is placed"""
+    listing = await db.gas_listings.find_one({"seller_id": seller_id}, {"_id": 0})
+    if not listing:
+        return False
+    
+    inventory = listing.get("inventory", {})
+    if cylinder_size not in inventory:
+        return False
+    
+    available = inventory[cylinder_size].get("available", 0)
+    if available < quantity:
+        return False
+    
+    # Reserve the stock
+    inventory[cylinder_size]["available"] -= quantity
+    inventory[cylinder_size]["reserved"] = inventory[cylinder_size].get("reserved", 0) + quantity
+    
+    await db.gas_listings.update_one(
+        {"seller_id": seller_id},
+        {"$set": {"inventory": inventory, "updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    return True
+
+async def confirm_inventory_sale(seller_id: str, cylinder_size: str, quantity: int):
+    """Confirm sale and move from reserved to sold"""
+    listing = await db.gas_listings.find_one({"seller_id": seller_id}, {"_id": 0})
+    if not listing:
+        return False
+    
+    inventory = listing.get("inventory", {})
+    if cylinder_size not in inventory:
+        return False
+    
+    # Move from reserved to sold
+    inventory[cylinder_size]["reserved"] = max(0, inventory[cylinder_size].get("reserved", 0) - quantity)
+    inventory[cylinder_size]["sold_today"] = inventory[cylinder_size].get("sold_today", 0) + quantity
+    
+    await db.gas_listings.update_one(
+        {"seller_id": seller_id},
+        {"$set": {"inventory": inventory, "updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    return True
+
+async def release_inventory(seller_id: str, cylinder_size: str, quantity: int):
+    """Release reserved inventory if order is cancelled"""
+    listing = await db.gas_listings.find_one({"seller_id": seller_id}, {"_id": 0})
+    if not listing:
+        return False
+    
+    inventory = listing.get("inventory", {})
+    if cylinder_size not in inventory:
+        return False
+    
+    # Return to available
+    inventory[cylinder_size]["available"] += quantity
+    inventory[cylinder_size]["reserved"] = max(0, inventory[cylinder_size].get("reserved", 0) - quantity)
+    
+    await db.gas_listings.update_one(
+        {"seller_id": seller_id},
+        {"$set": {"inventory": inventory, "updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    return True
+
 @api_router.get("/sellers/my-orders")
 async def get_seller_orders(request: Request):
     """Get orders for my business"""
