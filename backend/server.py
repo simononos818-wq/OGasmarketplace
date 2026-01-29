@@ -843,6 +843,16 @@ async def create_order(request: Request, order_data: CreateOrderRequest):
     if not listing.get("is_available"):
         raise HTTPException(status_code=400, detail="This listing is not available")
     
+    # Check inventory availability
+    inventory = listing.get("inventory", {})
+    if order_data.cylinder_size.value in inventory:
+        available = inventory[order_data.cylinder_size.value].get("available", 0)
+        if available < order_data.quantity:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Insufficient stock. Only {available} units available"
+            )
+    
     # Get price
     price_per_unit = listing["prices"].get(order_data.cylinder_size.value)
     if not price_per_unit:
@@ -851,6 +861,16 @@ async def create_order(request: Request, order_data: CreateOrderRequest):
     # Calculate total
     delivery_fee = listing.get("delivery_fee", 0) if order_data.delivery_method == DeliveryMethod.DELIVERY else 0
     total_amount = (price_per_unit * order_data.quantity) + delivery_fee
+    
+    # Reserve inventory
+    reserved = await reserve_inventory(
+        order_data.seller_id, 
+        order_data.cylinder_size.value, 
+        order_data.quantity
+    )
+    
+    if not reserved:
+        raise HTTPException(status_code=400, detail="Could not reserve inventory")
     
     # Create order
     order_id = f"order_{uuid.uuid4().hex[:12]}"
@@ -874,7 +894,12 @@ async def create_order(request: Request, order_data: CreateOrderRequest):
     
     await db.orders.insert_one(order)
     
-    return {"message": "Order created", "order_id": order_id, "total_amount": total_amount}
+    return {
+        "message": "Order created",
+        "order_id": order_id,
+        "total_amount": total_amount,
+        "inventory_reserved": True
+    }
 
 @api_router.get("/buyers/my-orders")
 async def get_buyer_orders(request: Request):
