@@ -761,6 +761,26 @@ async def update_order_status(request: Request, order_id: str, status: OrderStat
     if not seller:
         raise HTTPException(status_code=404, detail="Seller profile not found")
     
+    order = await db.orders.find_one({"order_id": order_id, "seller_id": seller["seller_id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Handle inventory based on status
+    if status == OrderStatus.COMPLETED:
+        # Confirm sale - move from reserved to sold
+        await confirm_inventory_sale(
+            seller["seller_id"],
+            order["cylinder_size"],
+            order["quantity"]
+        )
+    elif status == OrderStatus.CANCELLED:
+        # Release reserved inventory
+        await release_inventory(
+            seller["seller_id"],
+            order["cylinder_size"],
+            order["quantity"]
+        )
+    
     result = await db.orders.update_one(
         {"order_id": order_id, "seller_id": seller["seller_id"]},
         {"$set": {"status": status.value, "updated_at": datetime.now(timezone.utc)}}
@@ -769,7 +789,7 @@ async def update_order_status(request: Request, order_id: str, status: OrderStat
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    return {"message": "Order status updated"}
+    return {"message": "Order status updated", "new_status": status.value}
 
 # ============= BUYER ROUTES =============
 
