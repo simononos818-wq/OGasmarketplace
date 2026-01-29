@@ -179,9 +179,12 @@ class CreateSellerProfileRequest(BaseModel):
 class CreateListingRequest(BaseModel):
     prices: dict
     available_sizes: List[CylinderSize]
+    inventory: Optional[dict] = {}  # {"3kg": 50, "6kg": 30, ...}
     delivery_available: bool = True
     pickup_available: bool = True
     delivery_fee: int = 0
+    low_stock_alert: int = 10
+    auto_unavailable_at: int = 0
 
 class CreateOrderRequest(BaseModel):
     seller_id: str
