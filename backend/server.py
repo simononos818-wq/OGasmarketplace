@@ -468,6 +468,24 @@ async def create_listing(request: Request, listing_data: CreateListingRequest):
     if not seller:
         raise HTTPException(status_code=404, detail="Seller profile not found. Please create profile first.")
     
+    # Initialize inventory if provided
+    inventory = {}
+    if listing_data.inventory:
+        for size, qty in listing_data.inventory.items():
+            inventory[size] = {
+                "available": qty,
+                "reserved": 0,
+                "sold_today": 0
+            }
+    else:
+        # Initialize with zero stock
+        for size in listing_data.available_sizes:
+            inventory[size.value] = {
+                "available": 0,
+                "reserved": 0,
+                "sold_today": 0
+            }
+    
     # Check if listing exists
     existing = await db.gas_listings.find_one({"seller_id": seller["seller_id"]}, {"_id": 0})
     
@@ -478,10 +496,14 @@ async def create_listing(request: Request, listing_data: CreateListingRequest):
             {"$set": {
                 "prices": listing_data.prices,
                 "available_sizes": [size.value for size in listing_data.available_sizes],
+                "inventory": inventory,
                 "delivery_available": listing_data.delivery_available,
                 "pickup_available": listing_data.pickup_available,
                 "delivery_fee": listing_data.delivery_fee,
-                "updated_at": datetime.now(timezone.utc)
+                "low_stock_alert": listing_data.low_stock_alert,
+                "auto_unavailable_at": listing_data.auto_unavailable_at,
+                "updated_at": datetime.now(timezone.utc),
+                "last_restocked": datetime.now(timezone.utc) if listing_data.inventory else existing.get("last_restocked")
             }}
         )
         return {"message": "Listing updated", "listing_id": existing["listing_id"]}
@@ -493,10 +515,14 @@ async def create_listing(request: Request, listing_data: CreateListingRequest):
             "seller_id": seller["seller_id"],
             "prices": listing_data.prices,
             "available_sizes": [size.value for size in listing_data.available_sizes],
+            "inventory": inventory,
             "is_available": True,
             "delivery_available": listing_data.delivery_available,
             "pickup_available": listing_data.pickup_available,
             "delivery_fee": listing_data.delivery_fee,
+            "low_stock_alert": listing_data.low_stock_alert,
+            "auto_unavailable_at": listing_data.auto_unavailable_at,
+            "last_restocked": datetime.now(timezone.utc) if listing_data.inventory else None,
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         }
