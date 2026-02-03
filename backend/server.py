@@ -76,6 +76,9 @@ class User(BaseModel):
     picture: Optional[str] = None
     role: UserRole
     phone: Optional[str] = None
+    nin: Optional[str] = None  # National Identification Number (required for sellers)
+    nin_verified: bool = False  # NIN verification status
+    phone_verified: bool = False  # Phone verification status
     location: Optional[Location] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
