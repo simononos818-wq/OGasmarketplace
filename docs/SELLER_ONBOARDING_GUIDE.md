@@ -77,7 +77,7 @@
    - Account must match business name
    - For receiving payments
 
-5. **Contact Information**
+5. **National Identification Verification**
    - Business phone number (WhatsApp enabled)
    - Email address
    - Operating hours
