@@ -105,6 +105,13 @@ This document outlines the comprehensive verification process for all OGas selle
 
 **Document Authenticity Check:**
 
+**National Identification Number (NIN) Verification:**
+1. Verify NIN format (11 digits)
+2. Check against NIMC database (if API access available)
+3. Confirm name on NIN matches business owner/director
+4. Verify NIN is not flagged or suspended
+5. Document verification outcome
+
 **DPR License Verification:**
 1. Visit DPR website/call DPR office
 2. Verify license number exists in database
