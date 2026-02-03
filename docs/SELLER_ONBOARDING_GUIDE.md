@@ -109,8 +109,12 @@
 2. Click **"Get Started"**
 3. Sign in with **Google** (your business email)
 4. Select **"I'm a Seller"**
-5. Enter your phone number
-6. Provide your business address and location
+5. Enter your 11-digit **NIN** (National Identification Number)
+6. Enter your phone number
+7. Allow **location access** when prompted
+8. Provide your business address (street, city, state)
+
+**Important:** Your location is automatically captured to help buyers find you. Ensure location services are enabled on your device.
 
 ### Step 2: Complete Business Profile (10 minutes)
 
