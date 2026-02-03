@@ -264,6 +264,24 @@ function RoleSelection() {
               {selectedRole === 'seller' && (
                 <>
                   <div>
+                    <Label htmlFor="nin" className="text-sm sm:text-base">National Identification Number (NIN) *</Label>
+                    <Input
+                      id="nin"
+                      type="text"
+                      placeholder="12345678901"
+                      maxLength={11}
+                      value={formData.nin}
+                      onChange={(e) => setFormData({ ...formData, nin: e.target.value.replace(/\D/g, '') })}
+                      required
+                      className="text-sm sm:text-base h-10 sm:h-11"
+                      data-testid="nin-input"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      11-digit NIN required for seller verification
+                    </p>
+                  </div>
+
+                  <div>
                     <Label htmlFor="address" className="text-sm sm:text-base">Business Address *</Label>
                     <Input
                       id="address"
@@ -305,43 +323,32 @@ function RoleSelection() {
 
                   <div>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
-                      <Label className="text-sm sm:text-base">Location Coordinates *</Label>
+                      <Label className="text-sm sm:text-base">Location Access *</Label>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={getCurrentLocation}
+                        disabled={locationLoading}
                         className="text-xs sm:text-sm w-full sm:w-auto"
                         data-testid="get-location-button"
                       >
-                        Get Current Location
+                        {locationLoading ? 'Getting Location...' : formData.latitude ? '✓ Location Obtained' : 'Enable Location'}
                       </Button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      <div>
-                        <Input
-                          placeholder="Latitude"
-                          value={formData.latitude}
-                          onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                          required
-                          className="text-sm sm:text-base h-10 sm:h-11"
-                          data-testid="latitude-input"
-                        />
+                    {formData.latitude && formData.longitude ? (
+                      <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                        <p className="text-sm text-green-700">
+                          ✓ Location captured successfully
+                        </p>
                       </div>
-                      <div>
-                        <Input
-                          placeholder="Longitude"
-                          value={formData.longitude}
-                          onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                          required
-                          className="text-sm sm:text-base h-10 sm:h-11"
-                          data-testid="longitude-input"
-                        />
+                    ) : (
+                      <div className="bg-orange-50 border border-orange-200 rounded-md p-3">
+                        <p className="text-sm text-orange-700">
+                          Location access is required to help buyers find you
+                        </p>
                       </div>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                      This helps buyers find you based on distance
-                    </p>
+                    )}
                   </div>
                 </>
               )}
