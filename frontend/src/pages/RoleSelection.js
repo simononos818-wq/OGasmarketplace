@@ -354,36 +354,10 @@ function RoleSelection() {
               )}
 
               {selectedRole === 'buyer' && (
-                <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
-                    <Label className="text-sm sm:text-base">Your Location (Optional)</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={getCurrentLocation}
-                      className="text-xs sm:text-sm w-full sm:w-auto"
-                    >
-                      Get Current Location
-                    </Button>
-                  </div>
-                  <p className="text-xs sm:text-sm text-gray-500 mb-2">
-                    Setting your location helps find sellers near you
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <p className="text-sm text-blue-700">
+                    ℹ️ As a buyer, you can set your location later when searching for gas sellers near you.
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <Input
-                      placeholder="Latitude"
-                      value={formData.latitude}
-                      onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                      className="text-sm sm:text-base h-10 sm:h-11"
-                    />
-                    <Input
-                      placeholder="Longitude"
-                      value={formData.longitude}
-                      onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                      className="text-sm sm:text-base h-10 sm:h-11"
-                    />
-                  </div>
                 </div>
               )}
 
