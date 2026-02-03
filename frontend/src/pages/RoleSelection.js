@@ -188,7 +188,7 @@ function RoleSelection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <Card 
               className="p-6 sm:p-8 cursor-pointer border-2 hover:border-orange-500 transition-all hover:shadow-lg active:scale-95"
-              onClick={() => setSelectedRole('buyer')}
+              onClick={() => handleRoleSelect('buyer')}
               data-testid="buyer-role-card"
             >
               <div className="text-center">
