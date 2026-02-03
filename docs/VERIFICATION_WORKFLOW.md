@@ -24,6 +24,12 @@ This document outlines the comprehensive verification process for all OGas selle
 □ Business name registration OR
 □ Tax Identification Number (TIN)
 
+**National Identification Number (Mandatory):**
+□ Valid 11-digit NIN
+□ NIN provided during registration
+□ Will be verified against NIMC database
+□ Must match business owner's name
+
 **LPG Operating License (Mandatory):**
 □ Valid DPR (Department of Petroleum Resources) license
 □ License expiry date > 6 months from application date
