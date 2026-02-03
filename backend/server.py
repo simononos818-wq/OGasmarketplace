@@ -349,6 +349,21 @@ async def complete_signup(request: Request, data: RoleSelectionRequest):
     if not email:
         raise HTTPException(status_code=400, detail="Missing user data")
     
+    # Validate NIN for sellers
+    if data.role == UserRole.SELLER:
+        if not data.nin:
+            raise HTTPException(status_code=400, detail="NIN is required for sellers")
+        if len(data.nin) != 11 or not data.nin.isdigit():
+            raise HTTPException(status_code=400, detail="Invalid NIN format. Must be 11 digits")
+    
+    # Validate phone number
+    if not data.phone:
+        raise HTTPException(status_code=400, detail="Phone number is required")
+    
+    # Validate location for sellers
+    if data.role == UserRole.SELLER and not data.location:
+        raise HTTPException(status_code=400, detail="Location is required for sellers")
+    
     # Create user
     user_id = f"user_{uuid.uuid4().hex[:12]}"
     user_data = {
@@ -358,6 +373,9 @@ async def complete_signup(request: Request, data: RoleSelectionRequest):
         "picture": picture,
         "role": data.role.value,
         "phone": data.phone,
+        "nin": data.nin if data.role == UserRole.SELLER else None,
+        "nin_verified": False,  # Will be verified during seller verification process
+        "phone_verified": True,  # Assume phone is verified via OTP (implement later)
         "location": data.location.dict() if data.location else None,
         "created_at": datetime.now(timezone.utc)
     }
@@ -384,9 +402,12 @@ async def complete_signup(request: Request, data: RoleSelectionRequest):
             "business_name": name,  # Default to user name
             "location": data.location.dict(),
             "phone": data.phone or "",
+            "nin": data.nin,
+            "nin_verified": False,
             "rating": 0.0,
             "total_reviews": 0,
             "is_verified": False,
+            "verification_status": "pending",  # pending, in_progress, verified, rejected
             "created_at": datetime.now(timezone.utc)
         })
     
