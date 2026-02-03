@@ -53,12 +53,18 @@
    - Business name registration OR
    - Tax identification number (TIN)
 
-2. **LPG Operating License**
+2. **National Identification Number (NIN)**
+   - Valid 11-digit NIN (MANDATORY)
+   - NIN slip or digital NIN card
+   - NIN will be verified against NIMC database
+   - Must match business owner's name
+
+3. **LPG Operating License**
    - Valid DPR (Department of Petroleum Resources) license
    - License expiry date must be > 6 months from now
    - Clear copy or photo required
 
-3. **Location Verification**
+4. **Location Verification**
    - Physical shop/plant address
    - Google Maps location
    - Photos of your facility (3 minimum):
