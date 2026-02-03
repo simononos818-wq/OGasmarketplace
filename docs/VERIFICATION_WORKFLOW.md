@@ -73,6 +73,11 @@ This document outlines the comprehensive verification process for all OGas selle
 ✓ Documents are not expired
 
 **Data Consistency Checks:**
+✓ All required documents uploaded
+✓ Files are readable (not corrupted)
+✓ Photos meet minimum resolution (720p)
+✓ Documents are not expired
+✓ NIN is 11 digits and numeric only
 ✓ Business name matches across all documents
 ✓ License number format is valid
 ✓ Phone number is Nigerian (+234)
