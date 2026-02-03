@@ -78,6 +78,12 @@
    - For receiving payments
 
 5. **National Identification Verification**
+   - 11-digit NIN provided during registration
+   - Verified against NIMC (National Identity Management Commission) database
+   - Must match business owner/director name
+   - NIN slip or digital card for reference
+
+6. **Contact Information**
    - Business phone number (WhatsApp enabled)
    - Email address
    - Operating hours
