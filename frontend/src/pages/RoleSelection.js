@@ -16,8 +16,10 @@ function RoleSelection() {
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState('');
   const [loading, setLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
   const [formData, setFormData] = useState({
     phone: '',
+    nin: '',
     address: '',
     city: '',
     state: '',
@@ -33,6 +35,7 @@ function RoleSelection() {
   }
 
   const getCurrentLocation = () => {
+    setLocationLoading(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -41,30 +44,80 @@ function RoleSelection() {
             latitude: position.coords.latitude.toString(),
             longitude: position.coords.longitude.toString()
           }));
+          setLocationLoading(false);
           toast({
             title: "Location obtained",
             description: "Your location has been captured successfully"
           });
         },
         (error) => {
+          setLocationLoading(false);
           toast({
             title: "Location error",
-            description: "Could not get your location. Please enter manually.",
+            description: "Could not get your location. Please enable location services.",
             variant: "destructive"
           });
         }
       );
+    } else {
+      setLocationLoading(false);
+      toast({
+        title: "Not supported",
+        description: "Your browser doesn't support location services",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Auto-request location when seller role is selected
+  const handleRoleSelect = (role) => {
+    setSelectedRole(role);
+    if (role === 'seller') {
+      // Automatically request location for sellers
+      setTimeout(() => {
+        getCurrentLocation();
+      }, 500);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate NIN for sellers
+    if (selectedRole === 'seller') {
+      if (!formData.nin) {
+        toast({
+          title: "NIN Required",
+          description: "National Identification Number is mandatory for sellers",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (formData.nin.length !== 11 || !/^\d+$/.test(formData.nin)) {
+        toast({
+          title: "Invalid NIN",
+          description: "NIN must be exactly 11 digits",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (!formData.latitude || !formData.longitude) {
+        toast({
+          title: "Location Required",
+          description: "Please allow location access to continue as a seller",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
       const requestData = {
         role: selectedRole,
         phone: formData.phone,
+        nin: selectedRole === 'seller' ? formData.nin : null,
         location: formData.latitude && formData.longitude ? {
           latitude: parseFloat(formData.latitude),
           longitude: parseFloat(formData.longitude),
@@ -88,7 +141,8 @@ function RoleSelection() {
       });
 
       if (!response.ok) {
-        throw new Error('Signup failed');
+        const error = await response.json();
+        throw new Error(error.detail || 'Signup failed');
       }
 
       const data = await response.json();
@@ -98,7 +152,9 @@ function RoleSelection() {
 
       toast({
         title: "Welcome to OGas!",
-        description: "Your account has been created successfully"
+        description: selectedRole === 'seller' 
+          ? "Your seller account has been created. Verification in progress." 
+          : "Your account has been created successfully"
       });
 
       // Redirect based on role
@@ -108,7 +164,7 @@ function RoleSelection() {
       console.error('Signup error:', error);
       toast({
         title: "Signup failed",
-        description: "Please try again",
+        description: error.message || "Please try again",
         variant: "destructive"
       });
     } finally {
