@@ -91,6 +91,7 @@ class SessionData(BaseModel):
 class RoleSelectionRequest(BaseModel):
     role: UserRole
     phone: Optional[str] = None
+    nin: Optional[str] = None  # Required for sellers
     location: Optional[Location] = None
 
 class SellerProfile(BaseModel):
