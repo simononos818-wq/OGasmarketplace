@@ -1021,6 +1021,12 @@ async def create_order(request: Request, order_data: CreateOrderRequest):
     
     await db.orders.insert_one(order)
     
+    # Check if this is referee's first order - complete referral
+    first_order = await db.orders.count_documents({"buyer_id": user["user_id"]}) == 1
+    if first_order and user.get("referred_by"):
+        # Complete the referral
+        await complete_referral(user["user_id"])
+    
     return {
         "message": "Order created",
         "order_id": order_id,
