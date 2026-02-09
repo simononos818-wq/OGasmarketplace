@@ -119,6 +119,7 @@ function RoleSelection() {
         role: selectedRole,
         phone: formData.phone,
         nin: selectedRole === 'seller' ? formData.nin : null,
+        referral_code: formData.referralCode || null,  // Add referral code
         location: formData.latitude && formData.longitude ? {
           latitude: parseFloat(formData.latitude),
           longitude: parseFloat(formData.longitude),
