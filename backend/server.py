@@ -80,6 +80,21 @@ class User(BaseModel):
     nin_verified: bool = False  # NIN verification status
     phone_verified: bool = False  # Phone verification status
     location: Optional[Location] = None
+    referral_code: Optional[str] = None  # User's unique referral code
+    referred_by: Optional[str] = None  # User ID of referrer
+    referral_credits: int = 0  # Total referral earnings in Naira
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Referral(BaseModel):
+    referral_id: str
+    referrer_id: str  # User who referred
+    referrer_role: UserRole  # Role of referrer (buyer/seller)
+    referee_id: str  # User who was referred
+    referee_role: UserRole  # Role of referee
+    referral_code: str  # Code used
+    reward_amount: int  # Amount earned (500 for buyer, 1000 for seller)
+    status: str  # pending, completed, paid
+    completed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class SessionData(BaseModel):
