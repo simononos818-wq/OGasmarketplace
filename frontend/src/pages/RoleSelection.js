@@ -263,6 +263,22 @@ function RoleSelection() {
                 />
               </div>
 
+              <div>
+                <Label htmlFor="referralCode" className="text-sm sm:text-base">Referral Code (Optional)</Label>
+                <Input
+                  id="referralCode"
+                  type="text"
+                  placeholder="Enter referral code if you have one"
+                  value={formData.referralCode}
+                  onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
+                  className="text-sm sm:text-base h-10 sm:h-11"
+                  data-testid="referral-code-input"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Get ₦500 OFF your first order with a referral code!
+                </p>
+              </div>
+
               {selectedRole === 'seller' && (
                 <>
                   <div>
