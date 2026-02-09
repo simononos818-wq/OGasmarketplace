@@ -151,6 +151,7 @@ function SellerDashboard() {
           <Route path="/" element={<Orders />} />
           <Route path="/profile" element={<BusinessProfile />} />
           <Route path="/listing" element={<GasListing />} />
+          <Route path="/referrals" element={<ReferralProgram userRole="seller" />} />
         </Routes>
       </div>
     </div>
