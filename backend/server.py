@@ -230,6 +230,13 @@ class PaymentInitRequest(BaseModel):
 
 # ============= HELPER FUNCTIONS =============
 
+def generate_referral_code(name: str, user_id: str) -> str:
+    """Generate unique referral code from name and user_id"""
+    # Format: FIRSTNAME + last 6 chars of user_id
+    first_name = name.split()[0].upper()[:8]
+    unique_suffix = user_id[-6:].upper()
+    return f"{first_name}{unique_suffix}"
+
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate distance between two points in kilometers using Haversine formula"""
     R = 6371  # Earth's radius in kilometers
