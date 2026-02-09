@@ -8,9 +8,10 @@ import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { 
-  Flame, Store, Package, Settings, LogOut, Plus, Edit 
+  Flame, Store, Package, Settings, LogOut, Plus, Edit, Gift 
 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import ReferralProgram from './ReferralProgram';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
