@@ -134,6 +134,7 @@ function BuyerDashboard() {
           <Route path="/seller/:sellerId" element={<SellerDetails />} />
           <Route path="/orders" element={<MyOrders />} />
           <Route path="/order/:orderId" element={<OrderDetails />} />
+          <Route path="/referrals" element={<ReferralProgram userRole="buyer" />} />
         </Routes>
       </div>
     </div>
