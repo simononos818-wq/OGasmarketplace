@@ -6,9 +6,10 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { 
   Flame, Search, MapPin, Star, ShoppingCart, 
-  MessageCircle, LogOut, Package, User 
+  MessageCircle, LogOut, Package, User, Gift 
 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import ReferralProgram from './ReferralProgram';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
