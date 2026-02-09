@@ -1284,6 +1284,128 @@ async def get_unread_count(request: Request):
     
     return {"unread_count": count}
 
+# ============= REFERRAL ROUTES =============
+
+@api_router.get("/referrals/my-code")
+async def get_my_referral_code(request: Request):
+    """Get my referral code and link"""
+    user = await require_auth(request)
+    
+    # Generate referral link
+    base_url = "https://ogas.ng"  # Update with actual domain
+    referral_link = f"{base_url}?ref={user['referral_code']}"
+    
+    return {
+        "referral_code": user["referral_code"],
+        "referral_link": referral_link,
+        "reward_amount": 1000 if user["role"] == "seller" else 500
+    }
+
+@api_router.get("/referrals/stats")
+async def get_referral_stats(request: Request):
+    """Get referral statistics"""
+    user = await require_auth(request)
+    
+    # Get all referrals
+    referrals_cursor = db.referrals.find({"referrer_id": user["user_id"]}, {"_id": 0})
+    referrals = await referrals_cursor.to_list(length=1000)
+    
+    # Calculate stats
+    total_referrals = len(referrals)
+    pending_referrals = len([r for r in referrals if r["status"] == "pending"])
+    completed_referrals = len([r for r in referrals if r["status"] == "completed"])
+    total_earnings = sum(r["reward_amount"] for r in referrals if r["status"] == "completed")
+    pending_earnings = sum(r["reward_amount"] for r in referrals if r["status"] == "pending"])
+    
+    return {
+        "total_referrals": total_referrals,
+        "pending_referrals": pending_referrals,
+        "completed_referrals": completed_referrals,
+        "total_earnings": total_earnings,
+        "pending_earnings": pending_earnings,
+        "referral_credits": user.get("referral_credits", 0)
+    }
+
+@api_router.get("/referrals/list")
+async def get_my_referrals(request: Request):
+    """Get list of my referrals"""
+    user = await require_auth(request)
+    
+    # Get referrals with referee details
+    referrals_cursor = db.referrals.find({"referrer_id": user["user_id"]}, {"_id": 0}).sort("created_at", -1)
+    referrals = await referrals_cursor.to_list(length=100)
+    
+    # Enrich with referee details
+    for referral in referrals:
+        referee = await db.users.find_one({"user_id": referral["referee_id"]}, {"_id": 0})
+        if referee:
+            referral["referee_name"] = referee.get("name")
+            referral["referee_email"] = referee.get("email")
+            referral["referee_joined"] = referee.get("created_at")
+    
+    return {"referrals": referrals}
+
+@api_router.post("/referrals/complete/{referee_id}")
+async def complete_referral(referee_id: str):
+    """Mark referral as completed (called after referee's first order)"""
+    # This endpoint is called internally when a user completes their first order
+    
+    # Find pending referral for this referee
+    referral = await db.referrals.find_one({
+        "referee_id": referee_id,
+        "status": "pending"
+    }, {"_id": 0})
+    
+    if not referral:
+        return {"message": "No pending referral found"}
+    
+    # Mark as completed
+    await db.referrals.update_one(
+        {"referral_id": referral["referral_id"]},
+        {"$set": {
+            "status": "completed",
+            "completed_at": datetime.now(timezone.utc)
+        }}
+    )
+    
+    # Credit referrer's account
+    await db.users.update_one(
+        {"user_id": referral["referrer_id"]},
+        {"$inc": {"referral_credits": referral["reward_amount"]}}
+    )
+    
+    return {
+        "message": "Referral completed",
+        "reward_amount": referral["reward_amount"],
+        "referrer_id": referral["referrer_id"]
+    }
+
+@api_router.get("/referrals/leaderboard")
+async def get_referral_leaderboard():
+    """Get top referrers (public)"""
+    # Aggregate referrals by referrer
+    pipeline = [
+        {"$match": {"status": "completed"}},
+        {"$group": {
+            "_id": "$referrer_id",
+            "total_referrals": {"$sum": 1},
+            "total_earnings": {"$sum": "$reward_amount"}
+        }},
+        {"$sort": {"total_referrals": -1}},
+        {"$limit": 10}
+    ]
+    
+    leaderboard = await db.referrals.aggregate(pipeline).to_list(length=10)
+    
+    # Enrich with user details
+    for entry in leaderboard:
+        user = await db.users.find_one({"user_id": entry["_id"]}, {"_id": 0})
+        if user:
+            entry["name"] = user.get("name")
+            entry["role"] = user.get("role")
+    
+    return {"leaderboard": leaderboard}
+
 # ============= GENERAL ROUTES =============
 
 @api_router.get("/")
