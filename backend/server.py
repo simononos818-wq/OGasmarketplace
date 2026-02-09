@@ -387,8 +387,17 @@ async def complete_signup(request: Request, data: RoleSelectionRequest):
     if data.role == UserRole.SELLER and not data.location:
         raise HTTPException(status_code=400, detail="Location is required for sellers")
     
+    # Validate referral code if provided
+    referrer_user = None
+    if data.referral_code:
+        referrer_user = await db.users.find_one({"referral_code": data.referral_code.upper()}, {"_id": 0})
+        if not referrer_user:
+            raise HTTPException(status_code=400, detail="Invalid referral code")
+    
     # Create user
     user_id = f"user_{uuid.uuid4().hex[:12]}"
+    referral_code = generate_referral_code(name, user_id)
+    
     user_data = {
         "user_id": user_id,
         "email": email,
@@ -400,10 +409,32 @@ async def complete_signup(request: Request, data: RoleSelectionRequest):
         "nin_verified": False,  # Will be verified during seller verification process
         "phone_verified": True,  # Assume phone is verified via OTP (implement later)
         "location": data.location.dict() if data.location else None,
+        "referral_code": referral_code,
+        "referred_by": referrer_user["user_id"] if referrer_user else None,
+        "referral_credits": 0,
         "created_at": datetime.now(timezone.utc)
     }
     
     await db.users.insert_one(user_data)
+    
+    # Create referral record if referred by someone
+    if referrer_user:
+        # Determine reward amount based on referrer's role
+        reward_amount = 1000 if referrer_user["role"] == "seller" else 500
+        
+        referral_id = f"ref_{uuid.uuid4().hex[:12]}"
+        referral_record = {
+            "referral_id": referral_id,
+            "referrer_id": referrer_user["user_id"],
+            "referrer_role": referrer_user["role"],
+            "referee_id": user_id,
+            "referee_role": data.role.value,
+            "referral_code": data.referral_code.upper(),
+            "reward_amount": reward_amount,
+            "status": "pending",  # Will become "completed" after referee's first order
+            "created_at": datetime.now(timezone.utc)
+        }
+        await db.referrals.insert_one(referral_record)
     
     # Create session
     session_token = f"session_{uuid.uuid4().hex}"
@@ -436,7 +467,9 @@ async def complete_signup(request: Request, data: RoleSelectionRequest):
     
     return {
         "user": user_data,
-        "session_token": session_token
+        "session_token": session_token,
+        "referral_code": referral_code,
+        "referred_by": referrer_user["name"] if referrer_user else None
     }
 
 @api_router.get("/auth/me")
