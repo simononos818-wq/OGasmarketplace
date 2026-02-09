@@ -107,6 +107,7 @@ class RoleSelectionRequest(BaseModel):
     role: UserRole
     phone: Optional[str] = None
     nin: Optional[str] = None  # Required for sellers
+    referral_code: Optional[str] = None  # Referral code (optional)
     location: Optional[Location] = None
 
 class SellerProfile(BaseModel):
