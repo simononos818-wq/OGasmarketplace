@@ -1318,10 +1318,10 @@ async def get_referral_stats(request: Request):
     
     # Calculate stats
     total_referrals = len(referrals)
-    pending_referrals = len([r for r in referrals if r["status"] == "pending"])
-    completed_referrals = len([r for r in referrals if r["status"] == "completed"])
-    total_earnings = sum(r["reward_amount"] for r in referrals if r["status"] == "completed")
-    pending_earnings = sum(r["reward_amount"] for r in referrals if r["status"] == "pending"])
+    pending_referrals = len([r for r in referrals if r.get("status") == "pending"])
+    completed_referrals = len([r for r in referrals if r.get("status") == "completed"])
+    total_earnings = sum([r.get("reward_amount", 0) for r in referrals if r.get("status") == "completed"])
+    pending_earnings = sum([r.get("reward_amount", 0) for r in referrals if r.get("status") == "pending"])
     
     return {
         "total_referrals": total_referrals,
