@@ -20,6 +20,7 @@ function RoleSelection() {
   const [formData, setFormData] = useState({
     phone: '',
     nin: '',
+    referralCode: '',  // Add referral code
     address: '',
     city: '',
     state: '',
