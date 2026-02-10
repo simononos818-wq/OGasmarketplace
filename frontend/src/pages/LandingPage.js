@@ -30,7 +30,7 @@ function LandingPage() {
 
   const handleLogin = () => {
     // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    const redirectUrl = window.location.origin + '/buyer';
+    const redirectUrl = 'https://ogalpgmarketplace.com/buyer';
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
   };
 
