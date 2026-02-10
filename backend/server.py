@@ -1298,7 +1298,7 @@ async def get_my_referral_code(request: Request):
     user = await require_auth(request)
     
     # Generate referral link
-    base_url = "https://ogas.ng"  # Update with actual domain
+    base_url = "https://ogalpgmarketplace.com"
     referral_link = f"{base_url}?ref={user['referral_code']}"
     
     return {
